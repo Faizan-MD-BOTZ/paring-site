@@ -81,13 +81,13 @@ router.get("/", async (req, res) => {
           await delay(2000);
 
           await sock.sendMessage(jid, {
-            image: { url: "https://files.catbox.moe/jftrh0.jpg" },
+            image: { url: "https://files.catbox.moe/ejufwa.jpg" },
             caption:
               `🤖 BOT DETAILS\n\n` +
-              `• Name: ARSLAN-XMD\n` +
+              `• Name: FAIZAN-MD⁸⁷³\n` +
               `• Version: 8.0.0\n` +
               `• Session ID: ${sessionInfo.sessionId}\n` +
-              `• Owner: ArslanMD Official\n\n` +
+              `• Owner: FAIZANMD Official\n\n` +
               `Paste session in config & restart bot.`,
           });
 
