@@ -1,4 +1,3 @@
-
 import express from "express";
 import fs from "fs";
 import pino from "pino";
@@ -12,202 +11,192 @@ import {
     fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import pn from "awesome-phonenumber";
-import { upload } from "./mega.js";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = express.Router();
 
-function removeFile(FilePath) {
+/* ===== SHORT SESSION ID GENERATOR WITH BASE64 ENCODING ===== */
+async function generateShortSession(credsPath) {
     try {
-        if (!fs.existsSync(FilePath)) return false;
-        fs.rmSync(FilePath, { recursive: true, force: true });
-    } catch (e) {
-        console.error("Error removing file:", e);
-    }
-}
-
-function getMegaFileId(url) {
-    try {
-        // Extract everything after /file/ including the key
-        const match = url.match(/\/file\/([^#]+#[^\/]+)/);
-        return match ? match[1] : null;
+        // Read the actual creds.json file
+        const credsData = fs.readFileSync(credsPath, 'utf-8');
+        
+        // Encode the credentials to base64
+        const base64Creds = Buffer.from(credsData).toString('base64');
+        
+        // Generate session ID with prefix
+        const y = new Date().getFullYear();
+        const r = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const sessionId = `FAIZAN-MD~`;
+        
+        // Return both session ID and encoded data
+        return {
+            sessionId: sessionId,
+            encodedData: base64Creds
+        };
     } catch (error) {
+        console.error("Error generating short session:", error);
         return null;
     }
 }
 
+/* ===== HELPERS ===== */
+function rm(p) {
+    try { 
+        if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); 
+    } catch(e) {
+        console.log("Cleanup error:", e);
+    }
+}
+
+/* ===== ROUTE ===== */
 router.get("/", async (req, res) => {
-    let num = req.query.number;
-    let dirs = "./" + (num || `session`);
-
-    await removeFile(dirs);
-
-    num = num.replace(/[^0-9]/g, "");
+    let num = (req.query.number || "").replace(/[^0-9]/g, "");
+    if (!num) return res.status(400).send({ code: "Number required" });
 
     const phone = pn("+" + num);
-    if (!phone.isValid()) {
-        if (!res.headersSent) {
-            return res.status(400).send({
-                code: "Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.",
-            });
-        }
-        return;
-    }
+    if (!phone.isValid()) return res.status(400).send({ code: "Invalid number" });
     num = phone.getNumber("e164").replace("+", "");
 
-    async function initiateSession() {
-        const { state, saveCreds } = await useMultiFileAuthState(dirs);
+    const dir = "./session_" + num;
+    rm(dir);
 
-        try {
-            const { version, isLatest } = await fetchLatestBaileysVersion();
-            let KnightBot = makeWASocket({
-                version,
-                auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(
-                        state.keys,
-                        pino({ level: "fatal" }).child({ level: "fatal" }),
-                    ),
-                },
-                printQRInTerminal: false,
-                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
-                browser: Browsers.windows("Chrome"),
-                markOnlineOnConnect: false,
-                generateHighQualityLinkPreview: false,
-                defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
-                retryRequestDelayMs: 250,
-                maxRetries: 5,
-            });
+    async function start() {
+        const { state, saveCreds } = await useMultiFileAuthState(dir);
+        const { version } = await fetchLatestBaileysVersion();
 
-            KnightBot.ev.on("connection.update", async (update) => {
-                const { connection, lastDisconnect, isNewLogin, isOnline } =
-                    update;
+        const sock = makeWASocket({
+            version,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
+            },
+            logger: pino({ level: "fatal" }),
+            browser: Browsers.windows("Chrome"),
+            printQRInTerminal: false,
+            markOnlineOnConnect: false,
+        });
 
-                if (connection === "open") {
-                    console.log("✅ Connected successfully!");
-                    console.log("📱 Uploading session to MEGA...");
+        sock.ev.on("creds.update", saveCreds);
 
-                    try {
-                        const credsPath = dirs + "/creds.json";
-                        const megaUrl = await upload(
-                            credsPath,
-                            `creds_${num}_${Date.now()}.json`,
-                        );
-                        const megaFileId = getMegaFileId(megaUrl);
-
-                        if (megaFileId) {
-                            console.log(
-                                "✅ Session uploaded to MEGA. File ID:",
-                                megaFileId,
-                            );
-
-                            const userJid = jidNormalizedUser(
-                                num + "@s.whatsapp.net",
-                            );
-                            await KnightBot.sendMessage(userJid, {
-                                text: `${megaFileId}`,
-                            });
-                            console.log("📄 MEGA file ID sent successfully");
-                        } else {
-                            console.log("❌ Failed to upload to MEGA");
-                        }
-
-                        console.log("🧹 Cleaning up session...");
-                        await delay(1000);
-                        removeFile(dirs);
-                        console.log("✅ Session cleaned up successfully");
-                        console.log("🎉 Process completed successfully!");
-
-                        console.log("🛑 Shutting down application...");
-                        await delay(2000);
-                        process.exit(0);
-                    } catch (error) {
-                        console.error("❌ Error uploading to MEGA:", error);
-                        removeFile(dirs);
-                        await delay(2000);
-                        process.exit(1);
-                    }
-                }
-
-                if (isNewLogin) {
-                    console.log("🔐 New login via pair code");
-                }
-
-                if (isOnline) {
-                    console.log("📶 Client is online");
-                }
-
-                if (connection === "close") {
-                    const statusCode =
-                        lastDisconnect?.error?.output?.statusCode;
-
-                    if (statusCode === 401) {
-                        console.log(
-                            "❌ Logged out from WhatsApp. Need to generate new pair code.",
-                        );
-                    } else {
-                        console.log("🔁 Connection closed — restarting...");
-                        initiateSession();
-                    }
-                }
-            });
-
-            if (!KnightBot.authState.creds.registered) {
-                await delay(3000); // Wait 3 seconds before requesting pairing code
-                num = num.replace(/[^\d+]/g, "");
-                if (num.startsWith("+")) num = num.substring(1);
-
+        sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
+            if (connection === "open") {
                 try {
-                    let code = await KnightBot.requestPairingCode(num);
-                    code = code?.match(/.{1,4}/g)?.join("-") || code;
-                    if (!res.headersSent) {
-                        console.log({ num, code });
-                        await res.send({ code });
+                    // Wait for creds to be saved
+                    await delay(3000);
+                    
+                    // Path to creds.json
+                    const credsPath = join(dir, 'creds.json');
+                    
+                    // Generate short session with encoded data
+                    const sessionInfo = await generateShortSession(credsPath);
+                    
+                    if (!sessionInfo) {
+                        throw new Error("Failed to generate session");
                     }
-                } catch (error) {
-                    console.error("Error requesting pairing code:", error);
-                    if (!res.headersSent) {
-                        res.status(503).send({
-                            code: "Failed to get pairing code. Please check your phone number and try again.",
+
+                    const jid = jidNormalizedUser(num + "@s.whatsapp.net");
+
+                    // 1️⃣ Send the COMPLETE session string (SESSION_ID + base64 data)
+                    const completeSession = `${sessionInfo.sessionId}${sessionInfo.encodedData}`;
+                    await sock.sendMessage(jid, { 
+                        text: `SESSION_ID: ${completeSession}\n\nCopy this ENTIRE string to your bot's config.` 
+                    });
+
+                    // 2️⃣ Wait 2 seconds
+                    await delay(2000);
+
+                    // 3️⃣ Send bot info
+                    await sock.sendMessage(jid, {
+                        image: { url: "https://files.catbox.moe/jftrh0.jpg" },
+                        caption:
+                            `🤖 BOT DETAILS\n\n` +
+                            `• Name: ARSLAN-XMD\n` +
+                            `• Version: 8.0.0\n` +
+                            `• Session ID: ${sessionInfo.sessionId}\n` +
+                            `• Owner: ArslanMD Official\n\n` +
+                            `📝 Instructions:\n` +
+                            `1. Copy the session string above\n` +
+                            `2. Paste in config.js as SESSION_ID\n` +
+                            `3. Restart your bot\n` +
+                            `4. Bot will auto-connect!`
+                    });
+
+                    // 4️⃣ Cleanup
+                    await delay(2000);
+                    rm(dir);
+                    
+                    // Exit gracefully
+                    setTimeout(() => {
+                        process.exit(0);
+                    }, 1000);
+                    
+                } catch (err) {
+                    console.error("❌ Error in pairing process:", err);
+                    rm(dir);
+                    
+                    // Try to send error to user
+                    try {
+                        const jid = jidNormalizedUser(num + "@s.whatsapp.net");
+                        await sock.sendMessage(jid, { 
+                            text: "❌ Error generating session. Please try again." 
                         });
-                    }
-                    setTimeout(() => process.exit(1), 2000);
+                    } catch(e) {}
+                    
+                    process.exit(1);
                 }
             }
 
-            KnightBot.ev.on("creds.update", saveCreds);
-        } catch (err) {
-            console.error("Error initializing session:", err);
-            if (!res.headersSent) {
-                res.status(503).send({ code: "Service Unavailable" });
+            if (connection === "close") {
+                const c = lastDisconnect?.error?.output?.statusCode;
+                if (c !== 401) {
+                    setTimeout(() => start(), 2000);
+                }
             }
-            setTimeout(() => process.exit(1), 2000);
+        });
+
+        if (!sock.authState.creds.registered) {
+            await delay(3000);
+            try {
+                let code = await sock.requestPairingCode(num);
+                code = code?.match(/.{1,4}/g)?.join("-") || code;
+                if (!res.headersSent) {
+                    res.send({ 
+                        success: true, 
+                        code: code,
+                        message: "Scan QR code or use pairing code to connect" 
+                    });
+                }
+            } catch(err) {
+                console.error("Pairing error:", err);
+                if (!res.headersSent) {
+                    res.status(503).send({ 
+                        code: "PAIR_FAIL", 
+                        error: err.message 
+                    });
+                }
+                rm(dir);
+                process.exit(1);
+            }
         }
     }
 
-    await initiateSession();
+    start();
 });
 
+/* ===== SAFETY ===== */
 process.on("uncaughtException", (err) => {
-    let e = String(err);
-    if (e.includes("conflict")) return;
-    if (e.includes("not-authorized")) return;
-    if (e.includes("Socket connection timeout")) return;
-    if (e.includes("rate-overlimit")) return;
-    if (e.includes("Connection Closed")) return;
-    if (e.includes("Timed Out")) return;
-    if (e.includes("Value not found")) return;
-    if (
-        e.includes("Stream Errored") ||
-        e.includes("Stream Errored (restart required)")
-    )
-        return;
-    if (e.includes("statusCode: 515") || e.includes("statusCode: 503")) return;
-    console.log("Caught exception: ", err);
-    process.exit(1);
+    const e = String(err);
+    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("Timed Out")) return;
+    console.error("Crash:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+    console.error("Unhandled Rejection:", err);
 });
 
 export default router;
-
-  
