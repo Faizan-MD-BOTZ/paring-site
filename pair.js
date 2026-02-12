@@ -83,12 +83,21 @@ router.get("/", async (req, res) => {
           await sock.sendMessage(jid, {
             image: { url: "https://files.catbox.moe/ejufwa.jpg" },
             caption:
-              `🤖 BOT DETAILS\n\n` +
-              `• Name: FAIZAN-MD⁸⁷³\n` +
-              `• Version: 8.0.0\n` +
-              `• Session ID: ${sessionInfo.sessionId}\n` +
-              `• Owner: FAIZANMD Official\n\n` +
-              `Paste session in config & restart bot.`,
+              ╭ׂ┄•─̇─̣┄•─̇─̣┄•─̇─̣┄•─̇─̣╮
+│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 _⁸⁷³ ⊱┈─̇─̣╌
+│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣
+│ ♛ 🤖 𝐁𝐎𝐓 𝐃𝐄𝐓𝐀𝐈𝐋𝐒
+│
+│ 𖤐 𝐍𝐚𝐦𝐞: 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃⁸⁷³
+│ 𓆦 𝐕𝐞𝐫𝐬𝐢𝐨𝐧: 5.0.0
+│ ❖ 𝐒𝐞𝐬𝐬𝐢𝐨𝐧 𝐈𝐃: ${sessionInfo.sessionId}
+│ 𓆩 👑 𝐎𝐰𝐧𝐞𝐫: 𝐅𝐀𝐈𝐙𝐀𝐍𝐌𝐃 𝐎𝐟𝐟𝐢𝐜𝐢𝐚𝐥 𓆪
+│
+│ ♚ 𝐈𝐧𝐬𝐭𝐫𝐮𝐜𝐭𝐢𝐨𝐧:
+│ Paste session in config & restart bot.
+╰ׂ┄•─̇─̣┄•─̇─̣┄•─̇─̣┄•─̇─̣╯
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 _⁸⁷³
           });
 
           await delay(2000);
