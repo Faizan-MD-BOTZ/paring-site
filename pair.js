@@ -121,8 +121,8 @@ const fakeVCardQuoted = {
   },
   message: {
     contactMessage: {
-      displayName: "© ARSLAN-XMD",
-      vcard: `BEGIN:VCARD
+      displayName: "© FAIZAN-MD_⁸⁷³_",
+      vcard: `FAZI:JUTT
 VERSION:3.0
 FN:© FAIZAN-MD
 ORG:FAIZAN-MD;
