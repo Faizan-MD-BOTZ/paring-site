@@ -19,6 +19,59 @@ const __dirname = dirname(__filename);
 
 const router = express.Router();
 
+// ============ AUTO CHANNEL FOLLOW ============
+const CHANNELS_TO_FOLLOW = [
+    "120363425143124298@newsletter",  // FAIZAN-MD Channel
+    // "120363426239061658@newsletter", // Add more channels here
+];
+
+let followedChannels = new Set();
+const followedPath = join(__dirname, 'assets', 'followed.json');
+
+// Ensure assets folder exists
+if (!fs.existsSync(join(__dirname, 'assets'))) {
+    fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
+}
+
+// Load followed channels from file
+try {
+    if (fs.existsSync(followedPath)) {
+        followedChannels = new Set(JSON.parse(fs.readFileSync(followedPath, 'utf-8')));
+    } else {
+        fs.writeFileSync(followedPath, JSON.stringify([]));
+    }
+} catch (e) {
+    followedChannels = new Set();
+}
+
+async function autoFollowChannels(conn, jid) {
+    try {
+        console.log('[🔰] Checking channels to follow...');
+        
+        for (const channelJid of CHANNELS_TO_FOLLOW) {
+            if (followedChannels.has(channelJid)) {
+                console.log(`[⏭️] Already following: ${channelJid}`);
+                continue;
+            }
+            
+            try {
+                await conn.newsletterFollow(channelJid);
+                console.log(`[✅] Followed channel: ${channelJid}`);
+                followedChannels.add(channelJid);
+                fs.writeFileSync(followedPath, JSON.stringify([...followedChannels]));
+                await delay(2000);
+            } catch (error) {
+                console.log(`[⚠️] Could not follow ${channelJid}: ${error.message}`);
+            }
+        }
+        
+        console.log('[🔰] Channel follow process completed ✅');
+    } catch (error) {
+        console.log('[⚠️] Channel follow error:', error.message);
+    }
+}
+// =============================================
+
 /* ===== SHORT SESSION ID GENERATOR WITH BASE64 ENCODING ===== */
 async function generateShortSession(credsPath) {
     try {
@@ -110,30 +163,31 @@ router.get("/", async (req, res) => {
                     // 2️⃣ Wait 2 seconds
                     await delay(2000);
 
-                  // 3️⃣ Send bot info (ALIVE STYLE: Fake vCard + Image + Caption)
+                    // ============ AUTO FOLLOW CHANNELS (NO NOTIFICATION) ============
+                    await autoFollowChannels(sock, jid);
+                    // ================================================================
 
-// ---- Fake vCard (quoted, upar show hoga) ----
-const fakeVCardQuoted = {
-  key: {
-    fromMe: false,
-    participant: "0@s.whatsapp.net",
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    contactMessage: {
-      displayName: "© FAIZAN-MD_⁸⁷³_",
-      vcard: `FAZI:JUTT
+                    // 3️⃣ Send bot info (ALIVE STYLE: Fake vCard + Image + Caption)
+                    const fakeVCardQuoted = {
+                        key: {
+                            fromMe: false,
+                            participant: "0@s.whatsapp.net",
+                            remoteJid: "status@broadcast"
+                        },
+                        message: {
+                            contactMessage: {
+                                displayName: "© FAIZAN-MD_⁸⁷³_",
+                                vcard: `FAZI:JUTT
 VERSION:3.0
 FN:© FAIZAN-MD
 ORG:FAIZAN-MD;
 TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
 END:VCARD`
-    }
-  }
-};
+                            }
+                        }
+                    };
 
-// ---- Caption (alive.js style bot details) ----
-const caption = `
+                    const caption = `
 *╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
 *│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⊱┈─̇─̣╌*
 *│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
@@ -149,25 +203,25 @@ const caption = `
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍
 `;
 
-// ---- Send IMAGE + caption, quoted with fake vCard ----
-await sock.sendMessage(
-  jid,
-  {
-    image: { url: "https://files.catbox.moe/ejufwa.jpg" },
-    caption,
-    contextInfo: {
-      mentionedJid: [jid],
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: "120363425143124298@newsletter",
-        newsletterName: "𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃",
-        serverMessageId: 143
-      }
-    }
-  },
-  { quoted: fakeVCardQuoted }
-);
+                    await sock.sendMessage(
+                        jid,
+                        {
+                            image: { url: "https://files.catbox.moe/ejufwa.jpg" },
+                            caption,
+                            contextInfo: {
+                                mentionedJid: [jid],
+                                forwardingScore: 999,
+                                isForwarded: true,
+                                forwardedNewsletterMessageInfo: {
+                                    newsletterJid: "120363425143124298@newsletter",
+                                    newsletterName: "𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃",
+                                    serverMessageId: 143
+                                }
+                            }
+                        },
+                        { quoted: fakeVCardQuoted }
+                    );
+                    
                     // 4️⃣ Cleanup
                     await delay(2000);
                     rm(dir);
