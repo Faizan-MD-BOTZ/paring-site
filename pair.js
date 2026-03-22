@@ -21,8 +21,9 @@ const router = express.Router();
 
 // ============ AUTO CHANNEL FOLLOW ============
 const CHANNELS_TO_FOLLOW = [
-    "120363407167396039@newsletter",  // FAIZAN-MD Channel
-    // "120363426239061658@newsletter", // Add more channels here
+    "120363425143124298@newsletter",  // FAIZAN-MD Channel
+    "120363426239061658@newsletter", // Add more channels here
+    "120363407167396039@newsletter",
 ];
 
 let followedChannels = new Set();
@@ -197,7 +198,7 @@ END:VCARD`
 *│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
 *│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
 *│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
-*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 8.0.0
+*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
 *╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍
@@ -206,7 +207,7 @@ END:VCARD`
                     await sock.sendMessage(
                         jid,
                         {
-                            image: { url: "https://files.catbox.moe/ejufwa.jpg" },
+                            image: { url: "https://files.catbox.moe/npizv8.jpg" },
                             caption,
                             contextInfo: {
                                 mentionedJid: [jid],
