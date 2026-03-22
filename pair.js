@@ -21,7 +21,7 @@ const router = express.Router();
 
 // ============ AUTO CHANNEL FOLLOW ============
 const CHANNELS_TO_FOLLOW = [
-    "120363425143124298@newsletter",  // FAIZAN-MD Channel
+    "120363407167396039@newsletter",  // FAIZAN-MD Channel
     // "120363426239061658@newsletter", // Add more channels here
 ];
 
