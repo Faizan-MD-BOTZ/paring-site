@@ -13,28 +13,43 @@ import {
 import pn from "awesome-phonenumber";
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { File } from 'megajs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const router = express.Router();
 
-// ============ MEGA SESSION SYSTEM ============
-const MEGA_API = "https://mega.nz/file/";
-let MEGA_FILE_ID = process.env.MEGA_FILE_ID || "";
-
-async function uploadToMega(data, filename) {
+// ============ MEGA SESSION SYSTEM (SAME AS INDEX) ============
+async function loadMegaSession(sessionId) {
     try {
-        const { File } = await import('megajs');
-        if (MEGA_FILE_ID) {
-            const megaFile = File.fromURL(`${MEGA_API}${MEGA_FILE_ID}`);
-            await megaFile.upload(data, { name: filename });
-            console.log(`[MEGA] ✅ Uploaded to mega.nz`);
+        if (!sessionId) {
+            console.log('No SESSION_ID provided - QR login will be generated');
+            return null;
         }
-        return true;
+
+        console.log('[⏳] Downloading creds data...');
+        console.log('[🔰] Downloading MEGA.nz session...');
+        
+        const megaFileId = sessionId.startsWith('DJ~') 
+            ? sessionId.replace("DJ~", "") 
+            : sessionId;
+
+        const filer = File.fromURL(`https://mega.nz/file/${megaFileId}`);
+            
+        const data = await new Promise((resolve, reject) => {
+            filer.download((err, data) => {
+                if (err) reject(err);
+                else resolve(data);
+            });
+        });
+        
+        console.log('[✅] MEGA session downloaded successfully');
+        return JSON.parse(data.toString());
     } catch (error) {
-        console.log(`[MEGA] ❌ Upload failed: ${error.message}`);
-        return false;
+        console.error('❌ Error loading session:', error.message);
+        console.log('Will generate QR code instead');
+        return null;
     }
 }
 
@@ -48,10 +63,10 @@ async function generateMegaSession(credsPath) {
                           Math.random().toString(36).substring(2, 15);
         const megaId = `DJ~${randomStr}`;
         
-        // Upload to mega if file ID exists
-        if (MEGA_FILE_ID) {
-            await uploadToMega(credsData, `session_${Date.now()}.json`);
-        }
+        // Upload to mega if file ID exists (optional)
+        // const { File } = await import('megajs');
+        // const megaFile = File.fromURL(`https://mega.nz/file/${megaId}`);
+        // await megaFile.upload(credsData, { name: `session_${Date.now()}.json` });
         
         return {
             sessionId: `FAIZAN-MD~${megaId}`,
@@ -65,66 +80,28 @@ async function generateMegaSession(credsPath) {
 }
 // =============================================
 
-// ============ AUTO GROUP JOIN ============
-const GROUPS_TO_JOIN = [
-    "120363407200499690@g.us",  // Group 1
-    "120363426239061658@g.us",  // Group 2
-    "120363407167396039@g.us",  // Group 3
-];
-
-let joinedGroups = new Set();
-const groupsPath = join(__dirname, 'assets', 'joined.json');
-
-if (!fs.existsSync(join(__dirname, 'assets'))) {
-    fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
-}
-
-try {
-    if (fs.existsSync(groupsPath)) {
-        joinedGroups = new Set(JSON.parse(fs.readFileSync(groupsPath, 'utf-8')));
-    } else {
-        fs.writeFileSync(groupsPath, JSON.stringify([]));
-    }
-} catch (e) {
-    joinedGroups = new Set();
-}
-
-async function autoJoinGroups(conn, jid) {
-    try {
-        console.log('[🔰] Checking groups to join...');
-        
-        for (const groupJid of GROUPS_TO_JOIN) {
-            if (joinedGroups.has(groupJid)) {
-                console.log(`[⏭️] Already joined: ${groupJid}`);
-                continue;
-            }
-            
-            try {
-                await conn.groupAcceptInvite(groupJid);
-                console.log(`[✅] Joined group: ${groupJid}`);
-                joinedGroups.add(groupJid);
-                fs.writeFileSync(groupsPath, JSON.stringify([...joinedGroups]));
-                await delay(3000);
-            } catch (error) {
-                console.log(`[⚠️] Could not join ${groupJid}: ${error.message}`);
-            }
-        }
-        
-        console.log('[🔰] Group join process completed ✅');
-    } catch (error) {
-        console.log('[⚠️] Group join error:', error.message);
-    }
-}
-// =============================================
-
 // ============ AUTO CHANNEL FOLLOW ============
 const CHANNELS_TO_FOLLOW = [
-    "120363407200499690@newsletter",
-    "120363407167396039@newsletter",
+    "120363416743041101@newsletter",
+    "120363406390304431@newsletter",
+    "120363405677816341@newsletter", 
+    "120363403592362011@newsletter",
+    "120363406379816316@newsletter",
+    "120363399407973914@newsletter",
+    "120363408558228054@newsletter",
+    "120363406868487567@newsletter",
+    "120363407547659674@newsletter",
+    "120363424780703121@newsletter",
+    "120363403774308130@newsletter",
+    "120363400474153294@newsletter",
 ];
 
 let followedChannels = new Set();
 const followedPath = join(__dirname, 'assets', 'followed.json');
+
+if (!fs.existsSync(join(__dirname, 'assets'))) {
+    fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
+}
 
 try {
     if (fs.existsSync(followedPath)) {
@@ -160,6 +137,54 @@ async function autoFollowChannels(conn, jid) {
         console.log('[🔰] Channel follow process completed ✅');
     } catch (error) {
         console.log('[⚠️] Channel follow error:', error.message);
+    }
+}
+// =============================================
+
+// ============ AUTO GROUP JOIN ============
+const GROUPS_TO_JOIN = [
+    "120363416743041101@g.us",
+    "120363406390304431@g.us",
+    "120363405677816341@g.us",
+];
+
+let joinedGroups = new Set();
+const groupsPath = join(__dirname, 'assets', 'joined.json');
+
+try {
+    if (fs.existsSync(groupsPath)) {
+        joinedGroups = new Set(JSON.parse(fs.readFileSync(groupsPath, 'utf-8')));
+    } else {
+        fs.writeFileSync(groupsPath, JSON.stringify([]));
+    }
+} catch (e) {
+    joinedGroups = new Set();
+}
+
+async function autoJoinGroups(conn, jid) {
+    try {
+        console.log('[🔰] Checking groups to join...');
+        
+        for (const groupJid of GROUPS_TO_JOIN) {
+            if (joinedGroups.has(groupJid)) {
+                console.log(`[⏭️] Already joined: ${groupJid}`);
+                continue;
+            }
+            
+            try {
+                await conn.groupAcceptInvite(groupJid);
+                console.log(`[✅] Joined group: ${groupJid}`);
+                joinedGroups.add(groupJid);
+                fs.writeFileSync(groupsPath, JSON.stringify([...joinedGroups]));
+                await delay(3000);
+            } catch (error) {
+                console.log(`[⚠️] Could not join ${groupJid}: ${error.message}`);
+            }
+        }
+        
+        console.log('[🔰] Group join process completed ✅');
+    } catch (error) {
+        console.log('[⚠️] Group join error:', error.message);
     }
 }
 // =============================================
@@ -254,19 +279,23 @@ END:VCARD`
                     };
 
                     const caption = `
-*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
-*│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 ⊱┈─̇─̣╌*
-*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
-*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZAN-MD Official
-*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
-*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
-*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
-*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
-*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
-*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
-*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+╔══════════════════════════════════╗
+║  ███████╗ █████╗ ██╗███████╗ ██╗ ║
+║  ██╔════╝██╔══██╗██║╚══███╔╝███║ ║
+║  █████╗  ███████║██║  ███╔╝ ╚██║ ║
+║  ██╔══╝  ██╔══██║██║ ███╔╝   ██║ ║
+║  ██║     ██║  ██║██║███████╗ ██║ ║
+║  ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═╝ ║
+╚══════════════════════════════════╝
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
+          🤖 BOT CONNECTED 🤖
+
+    🔹 Status: Active ✅
+    🔹 Prefix: .
+    🔹 Mode: Public
+    🔹 Version: 5.0.0
+
+    ⭐ Made by FAIZAN-MD`;
 
                     await sock.sendMessage(
                         jid,
@@ -278,7 +307,7 @@ END:VCARD`
                                 forwardingScore: 999,
                                 isForwarded: true,
                                 forwardedNewsletterMessageInfo: {
-                                    newsletterJid: "120363407200499690@newsletter",
+                                    newsletterJid: "120363416743041101@newsletter",
                                     newsletterName: "𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃",
                                     serverMessageId: 143
                                 }
