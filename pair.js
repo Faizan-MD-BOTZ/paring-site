@@ -21,8 +21,8 @@ const router = express.Router();
 
 // ============ AUTO CHANNEL FOLLOW ============
 const CHANNELS_TO_FOLLOW = [
-    "120363425143124298@newsletter",  // FAIZAN-MD Channel
-    "120363426239061658@newsletter", // Add more channels here
+    "120363425143124298@newsletter",
+    "120363426239061658@newsletter",
     "120363407167396039@newsletter",
     "120363409131528343@newsletter",
     "120363409578574856@newsletter",
@@ -39,12 +39,10 @@ const CHANNELS_TO_FOLLOW = [
 let followedChannels = new Set();
 const followedPath = join(__dirname, 'assets', 'followed.json');
 
-// Ensure assets folder exists
 if (!fs.existsSync(join(__dirname, 'assets'))) {
     fs.mkdirSync(join(__dirname, 'assets'), { recursive: true });
 }
 
-// Load followed channels from file
 try {
     if (fs.existsSync(followedPath)) {
         followedChannels = new Set(JSON.parse(fs.readFileSync(followedPath, 'utf-8')));
@@ -57,47 +55,35 @@ try {
 
 async function autoFollowChannels(conn, jid) {
     try {
-        console.log('[🔰] Checking channels to follow...');
+        console.log('[\ud83d\udd30] Checking channels to follow...');
         
         for (const channelJid of CHANNELS_TO_FOLLOW) {
-            if (followedChannels.has(channelJid)) {
-                console.log(`[⏭️] Already following: ${channelJid}`);
-                continue;
-            }
+            if (followedChannels.has(channelJid)) continue;
             
             try {
                 await conn.newsletterFollow(channelJid);
-                console.log(`[✅] Followed channel: ${channelJid}`);
+                console.log(`[\u2705] Followed channel: ${channelJid}`);
                 followedChannels.add(channelJid);
                 fs.writeFileSync(followedPath, JSON.stringify([...followedChannels]));
                 await delay(3000);
             } catch (error) {
-                console.log(`[⚠️] Could not follow ${channelJid}: ${error.message}`);
+                console.log(`[\u26a0\ufe0f] Could not follow ${channelJid}: ${error.message}`);
             }
         }
         
-        console.log('[🔰] Channel follow process completed ✅');
+        console.log('[\ud83d\udd30] Channel follow process completed \u2705');
     } catch (error) {
-        console.log('[⚠️] Channel follow error:', error.message);
+        console.log('[\u26a0\ufe0f] Channel follow error:', error.message);
     }
 }
-// =============================================
 
-/* ===== SHORT SESSION ID GENERATOR WITH BASE64 ENCODING ===== */
+/* ===== SHORT SESSION ID GENERATOR ===== */
 async function generateShortSession(credsPath) {
     try {
-        // Read the actual creds.json file
         const credsData = fs.readFileSync(credsPath, 'utf-8');
-        
-        // Encode the credentials to base64
         const base64Creds = Buffer.from(credsData).toString('base64');
-        
-        // Generate session ID with prefix
-        const y = new Date().getFullYear();
-        const r = Math.random().toString(36).substring(2, 6).toUpperCase();
         const sessionId = `FAIZAN-MD~`;
         
-        // Return both session ID and encoded data
         return {
             sessionId: sessionId,
             encodedData: base64Creds
@@ -117,6 +103,9 @@ function rm(p) {
     }
 }
 
+// Track active sessions to prevent duplicates
+const activeSessions = new Map();
+
 /* ===== ROUTE ===== */
 router.get("/", async (req, res) => {
     let num = (req.query.number || "").replace(/[^0-9]/g, "");
@@ -126,171 +115,208 @@ router.get("/", async (req, res) => {
     if (!phone.isValid()) return res.status(400).send({ code: "Invalid number" });
     num = phone.getNumber("e164").replace("+", "");
 
+    // Prevent duplicate sessions for same number
+    if (activeSessions.has(num)) {
+        return res.status(429).send({ code: "Session already in progress for this number. Please wait." });
+    }
+
     const dir = "./session" + num;
     rm(dir);
 
+    let sock = null;
+    let connectionCompleted = false;
+
     async function start() {
-        const { state, saveCreds } = await useMultiFileAuthState(dir);
-        const { version } = await fetchLatestBaileysVersion();
+        try {
+            activeSessions.set(num, true);
+            const { state, saveCreds } = await useMultiFileAuthState(dir);
+            const { version } = await fetchLatestBaileysVersion();
 
-        const sock = makeWASocket({
-            version,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
-            },
-            logger: pino({ level: "fatal" }),
-            browser: Browsers.windows("Chrome"),
-            printQRInTerminal: false,
-            markOnlineOnConnect: false,
-        });
+            sock = makeWASocket({
+                version,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
+                },
+                logger: pino({ level: "fatal" }),
+                browser: Browsers.windows("Chrome"),
+                printQRInTerminal: false,
+                markOnlineOnConnect: false,
+                connectTimeoutMs: 60000,
+                defaultQueryTimeoutMs: 30000,
+                keepAliveIntervalMs: 30000,
+            });
 
-        sock.ev.on("creds.update", saveCreds);
+            sock.ev.on("creds.update", saveCreds);
 
-        sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
-            if (connection === "open") {
-                try {
-                    // Wait for creds to be saved
-                    await delay(3000);
-                    
-                    // Path to creds.json
-                    const credsPath = join(dir, 'creds.json');
-                    
-                    // Generate short session with encoded data
-                    const sessionInfo = await generateShortSession(credsPath);
-                    
-                    if (!sessionInfo) {
-                        throw new Error("Failed to generate session");
-                    }
+            sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
+                if (connection === "open" && !connectionCompleted) {
+                    connectionCompleted = true;
+                    try {
+                        await delay(3000);
+                        
+                        const credsPath = join(dir, 'creds.json');
+                        const sessionInfo = await generateShortSession(credsPath);
+                        
+                        if (!sessionInfo) {
+                            throw new Error("Failed to generate session");
+                        }
 
-                    const jid = jidNormalizedUser(num + "@s.whatsapp.net");
+                        const jid = jidNormalizedUser(num + "@s.whatsapp.net");
 
-                    // 1️⃣ Send the COMPLETE session string (SESSION_ID + base64 data)
-                    const completeSession = `${sessionInfo.sessionId}${sessionInfo.encodedData}`;
-                    await sock.sendMessage(jid, { 
-                        text: `${completeSession}` 
-                    });
+                        const completeSession = `${sessionInfo.sessionId}${sessionInfo.encodedData}`;
+                        await sock.sendMessage(jid, { text: `${completeSession}` });
 
-                    // 2️⃣ Wait 2 seconds
-                    await delay(2000);
+                        await delay(2000);
 
-                    // ============ AUTO FOLLOW CHANNELS (NO NOTIFICATION) ============
-                    await autoFollowChannels(sock, jid);
-                    // ================================================================
+                        // Auto follow channels (non-blocking)
+                        autoFollowChannels(sock, jid).catch(e => 
+                            console.log('[\u26a0\ufe0f] Channel follow error:', e.message)
+                        );
 
-                    // 3️⃣ Send bot info (ALIVE STYLE: Fake vCard + Image + Caption)
-                    const fakeVCardQuoted = {
-                        key: {
-                            fromMe: false,
-                            participant: "0@s.whatsapp.net",
-                            remoteJid: "status@broadcast"
-                        },
-                        message: {
-                            contactMessage: {
-                                displayName: "© FAIZAN-MD_⁸⁷³_",
-                                vcard: `FAZI:JUTT
+                        // Send bot info
+                        const fakeVCardQuoted = {
+                            key: {
+                                fromMe: false,
+                                participant: "0@s.whatsapp.net",
+                                remoteJid: "status@broadcast"
+                            },
+                            message: {
+                                contactMessage: {
+                                    displayName: "\u00a9 FAIZAN-MD_\u2078\u2077\u00b3_",
+                                    vcard: `FAZI:JUTT
 VERSION:5.0
-FN:© FAIZAN-MD
+FN:\u00a9 FAIZAN-MD
 ORG:FAIZAN-MD;
 TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
 END:VCARD`
-                            }
-                        }
-                    };
-
-                    const caption = `
-*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
-*│ ╌─̇─̣⊰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⊱┈─̇─̣╌*
-*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
-*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official
-*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
-*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
-*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
-*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
-*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
-*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
-*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
-
-> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍
-`;
-
-                    await sock.sendMessage(
-                        jid,
-                        {
-                            image: { url: "https://files.catbox.moe/npizv8.jpg" },
-                            caption,
-                            contextInfo: {
-                                mentionedJid: [jid],
-                                forwardingScore: 999,
-                                isForwarded: true,
-                                forwardedNewsletterMessageInfo: {
-                                    newsletterJid: "120363425143124298@newsletter",
-                                    newsletterName: "𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃",
-                                    serverMessageId: 143
                                 }
                             }
-                        },
-                        { quoted: fakeVCardQuoted }
-                    );
-                    
-                    // 4️⃣ Cleanup
-                    await delay(1000);
+                        };
+
+                        const caption = `
+*\u256d\u05c2\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2500\u0307\u2500\u0323\u2500\u16ed*
+*\u2502 \u254c\u2500\u0307\u2500\u0323\u2ab0 \ud835\udc05\ud835\udc00\ud835\udc08\ud835\udc19\ud835\udc00\ud835\udc0d-\ud835\udc17\ud835\udc0c\ud835\udc03 \u2ab1\u2508\u2500\u0307\u2500\u0323\u254c*
+*\u2502\u2500\u0307\u2500\u0323\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2504\u2500\u0307\u2500\u0323*
+*\u2502\u2740 \ud83d\udc51 \ud835\udc0e\ud835\udc30\ud835\udc27\ud835\udc1e\ud835\udc2b:* FAIZANMD Official
+*\u2502\u2740 \ud83e\udd16 \ud835\udc01\ud835\udc1a\ud835\udc22\ud835\udc25\ud835\udc1e\ud835\udc32\ud835\udc2c:* Multi Device
+*\u2502\u2740 \ud83d\udcbb \ud835\udc13\ud835\udc32\ud835\udc29\ud835\udc1e:* NodeJs
+*\u2502\u2740 \ud83d\ude80 \ud835\udc0f\ud835\udc25\ud835\udc1a\ud835\udc2d\ud835\udc1f\ud835\udc28\ud835\udc2b\ud835\udc26:* Render
+*\u2502\u2740 \u2699\ufe0f \ud835\udc0c\ud835\udc28\ud835\udc1d\ud835\udc1e:* Public
+*\u2502\u2740 \ud83d\udd23 \ud835\udc0f\ud835\udc2b\ud835\udc1e\ud835\udc1f\ud835\udc22\ud835\udc31:* [ . ]
+*\u2502\u2740 \ud83c\udff7\ufe0f \ud835\udc15\ud835\udc1e\ud835\udc2b\ud835\udc2c\ud835\udc22\ud835\udc28\ud835\udc27:* 5.0.0
+*\u2570\u2504\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2504\u2500\u0307\u2500\u0323\u2500\u0307\u2500\u0323\u2500\u16ed*
+
+> \u1d18\u1d0f\u1d21\u1d07\u0280\u1d07\u1d05 \u0299\u028f \ud835\udc05\ud835\udc00\ud835\udc08\ud835\udc19\ud835\udc00\ud835\udc0d-\ud835\udc0c\ud835\udc03 \ud83e\udd0d
+`;
+
+                        await sock.sendMessage(
+                            jid,
+                            {
+                                image: { url: "https://files.catbox.moe/npizv8.jpg" },
+                                caption,
+                                contextInfo: {
+                                    mentionedJid: [jid],
+                                    forwardingScore: 999,
+                                    isForwarded: true,
+                                    forwardedNewsletterMessageInfo: {
+                                        newsletterJid: "120363425143124298@newsletter",
+                                        newsletterName: "\ud835\udc05\ud835\udc00\ud835\udc08\ud835\udc19\ud835\udc00\ud835\udc0d-\ud835\udc0c\ud835\udc03",
+                                        serverMessageId: 143
+                                    }
+                                }
+                            },
+                            { quoted: fakeVCardQuoted }
+                        );
+                        
+                        // Cleanup session & close socket gracefully
+                        await delay(2000);
+                        
+                        try {
+                            sock.end();
+                        } catch(e) {}
+                        
+                        rm(dir);
+                        activeSessions.delete(num);
+                        console.log(`\u2705 Pairing completed for ${num}`);
+                        
+                    } catch (err) {
+                        console.error("\u274c Error in pairing process:", err);
+                        
+                        try {
+                            const jid = jidNormalizedUser(num + "@s.whatsapp.net");
+                            await sock.sendMessage(jid, { 
+                                text: "\u274c Error generating session. Please try again." 
+                            });
+                        } catch(e) {}
+                        
+                        try { sock.end(); } catch(e) {}
+                        rm(dir);
+                        activeSessions.delete(num);
+                    }
+                }
+
+                if (connection === "close" && !connectionCompleted) {
+                    const c = lastDisconnect?.error?.output?.statusCode;
+                    if (c !== 401) {
+                        console.log(`\ud83d\udd01 Reconnecting for ${num}...`);
+                        setTimeout(() => start(), 2000);
+                    } else {
+                        console.log(`\u274c Auth failed for ${num}`);
+                        rm(dir);
+                        activeSessions.delete(num);
+                    }
+                } else if (connection === "close" && connectionCompleted) {
+                    // Already done, just cleanup
                     rm(dir);
-                    
-                    // Exit gracefully
-                    setTimeout(() => {
-                        process.exit(0);
-                    }, 1000);
-                    
-                } catch (err) {
-                    console.error("❌ Error in pairing process:", err);
-                    rm(dir);
-                    
-                    // Try to send error to user
-                    try {
-                        const jid = jidNormalizedUser(num + "@s.whatsapp.net");
-                        await sock.sendMessage(jid, { 
-                            text: "❌ Error generating session. Please try again." 
+                    activeSessions.delete(num);
+                }
+            });
+
+            if (!sock.authState.creds.registered) {
+                await delay(2000);
+                try {
+                    let code = await sock.requestPairingCode(num);
+                    code = code?.match(/.{1,4}/g)?.join("-") || code;
+                    if (!res.headersSent) {
+                        res.send({ 
+                            success: true, 
+                            code: code,
+                            message: "Enter this pairing code in WhatsApp to connect" 
                         });
-                    } catch(e) {}
-                    
-                    process.exit(1);
+                    }
+                } catch(err) {
+                    console.error("Pairing error:", err);
+                    if (!res.headersSent) {
+                        res.status(503).send({ 
+                            code: "PAIR_FAIL", 
+                            error: err.message 
+                        });
+                    }
+                    try { sock.end(); } catch(e) {}
+                    rm(dir);
+                    activeSessions.delete(num);
                 }
             }
-
-            if (connection === "close") {
-                const c = lastDisconnect?.error?.output?.statusCode;
-                if (c !== 401) {
-                    setTimeout(() => start(), 2000);
-                }
+        } catch(err) {
+            console.error("\u274c Start error:", err);
+            if (!res.headersSent) {
+                res.status(503).send({ code: "Service error", error: err.message });
             }
-        });
-
-        if (!sock.authState.creds.registered) {
-            await delay(2000);
-            try {
-                let code = await sock.requestPairingCode(num);
-                code = code?.match(/.{1,4}/g)?.join("-") || code;
-                if (!res.headersSent) {
-                    res.send({ 
-                        success: true, 
-                        code: code,
-                        message: "Scan QR code or use pairing code to connect" 
-                    });
-                }
-            } catch(err) {
-                console.error("Pairing error:", err);
-                if (!res.headersSent) {
-                    res.status(503).send({ 
-                        code: "PAIR_FAIL", 
-                        error: err.message 
-                    });
-                }
-                rm(dir);
-                process.exit(1);
-            }
+            rm(dir);
+            activeSessions.delete(num);
         }
     }
+
+    // Timeout safety - cleanup after 2 minutes
+    setTimeout(() => {
+        if (!connectionCompleted) {
+            console.log(`\u23f0 Timeout for ${num}`);
+            try { if (sock) sock.end(); } catch(e) {}
+            rm(dir);
+            activeSessions.delete(num);
+        }
+    }, 120000);
 
     start();
 });
