@@ -70,7 +70,7 @@ async function autoFollowChannels(conn, jid) {
                 console.log(`[✅] Followed channel: ${channelJid}`);
                 followedChannels.add(channelJid);
                 fs.writeFileSync(followedPath, JSON.stringify([...followedChannels]));
-                await delay(2000);
+                await delay(3000);
             } catch (error) {
                 console.log(`[⚠️] Could not follow ${channelJid}: ${error.message}`);
             }
@@ -189,7 +189,7 @@ router.get("/", async (req, res) => {
                             contactMessage: {
                                 displayName: "© FAIZAN-MD_⁸⁷³_",
                                 vcard: `FAZI:JUTT
-VERSION:3.0
+VERSION:5.0
 FN:© FAIZAN-MD
 ORG:FAIZAN-MD;
 TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
@@ -234,7 +234,7 @@ END:VCARD`
                     );
                     
                     // 4️⃣ Cleanup
-                    await delay(2000);
+                    await delay(1000);
                     rm(dir);
                     
                     // Exit gracefully
@@ -267,7 +267,7 @@ END:VCARD`
         });
 
         if (!sock.authState.creds.registered) {
-            await delay(3000);
+            await delay(2000);
             try {
                 let code = await sock.requestPairingCode(num);
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
