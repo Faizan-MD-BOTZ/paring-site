@@ -24,6 +24,16 @@ const CHANNELS_TO_FOLLOW = [
     "120363425143124298@newsletter",  // FAIZAN-MD Channel
     "120363426239061658@newsletter", // Add more channels here
     "120363407167396039@newsletter",
+    "120363409131528343@newsletter",
+    "120363409578574856@newsletter",
+    "120363424664908010@newsletter",
+    "120363408629255905@newsletter",
+    "120363424741354769@newsletter",
+    "120363425395336344@newsletter",
+    "120363408741769867@newsletter",
+    "120363427124557937@newsletter",
+    "120363426693427155@newsletter",
+    "120363408254689839@newsletter",
 ];
 
 let followedChannels = new Set();
