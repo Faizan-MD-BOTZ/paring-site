@@ -1,4 +1,3 @@
-
 import express from "express";
 import bodyParser from "body-parser";
 import { fileURLToPath } from "url";
@@ -22,6 +21,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.json({ status: "ok", uptime: process.uptime() });
+});
+
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "pair.html"));
 });
@@ -30,8 +34,7 @@ app.use("/pair", pairRouter);
 app.use("/qr", qrRouter);
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`\u2705 Server running on http://localhost:${PORT}`);
 });
 
 export default app;
-
