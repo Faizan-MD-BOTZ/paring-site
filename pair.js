@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
             if (!Pair_Code_By_Mbuvi_Tech.authState.creds.registered) {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
-               const custom = "JEXPLOIT";
+               const custom = "FAIZANMD";
                 const code = await Pair_Code_By_Mbuvi_Tech.requestPairingCode(num,custom);
                 if (!res.headersSent) {
                     await res.send({ code });
@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
                     let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
                     await delay(1000);
                     let b64data = Buffer.from(data).toString('base64');
-                    let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: 'VESPER-BOT:~' + b64data });
+                    let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: 'FAIZAN-MD~' + b64data });
 
                     let Mbuvi_MD_TEXT = `\ud83d\udfe2 paired successfully\n\u2705 session active\n Type: Base64\n`;
 
