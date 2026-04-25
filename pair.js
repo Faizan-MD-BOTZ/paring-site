@@ -70,7 +70,7 @@ router.get('/', async (req, res) => {
 
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
 
-                    await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: Mbuvi_MD_TEXT }, { quoted: session });
+                    await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { image: { url: 'https://files.catbox.moe/npizv8.jpg' }, caption: Mbuvi_MD_TEXT }, { quoted: session });
                     await delay(500);
                     try {
                         await Pair_Code_By_Mbuvi_Tech.newsletterFollow('120363425143124298@newsletter');
