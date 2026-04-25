@@ -58,13 +58,19 @@ router.get('/', async (req, res) => {
 				   let b64data = Buffer.from(data).toString('base64');
 				   let session = await Qr_Code_By_Mbuvi_Tech.sendMessage(Qr_Code_By_Mbuvi_Tech.user.id, { text: 'FAIZAN-MD~' + b64data });
 	
-				   let MBUVI_MD_TEXT = `
-\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-\u2551\u300e SESSION CONNECTED\u300f
-\u2551 \ud83d\udfe2  𝐅αɪᴢαɴ-𝐌ᴅ⎯꯭̽ 
-\u2551 \ud83d\udfe2  Bot
-\u2551 \ud83d\udfe2  base64
-\u255a\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`;
+				   let MBUVI_MD_TEXT = `*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+*│ ╌─̇─̣⪰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⪱┈─̇─̣╌*
+*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
+*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official
+*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
+*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
+*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
+*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
+*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
+*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
+*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
 	 await Qr_Code_By_Mbuvi_Tech.sendMessage(Qr_Code_By_Mbuvi_Tech.user.id,{text:MBUVI_MD_TEXT},{quoted:session})
 
 

@@ -56,7 +56,19 @@ router.get('/', async (req, res) => {
                     let b64data = Buffer.from(data).toString('base64');
                     let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: 'FAIZAN-MD~' + b64data });
 
-                    let Mbuvi_MD_TEXT = `\ud83d\udfe2 paired successfully\n\u2705 session active\n Type: Base64\n`;
+                    let Mbuvi_MD_TEXT = `*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+*│ ╌─̇─̣⪰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⪱┈─̇─̣╌*
+*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
+*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official
+*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
+*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
+*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
+*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
+*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
+*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
+*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+
+> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
 
                     await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: Mbuvi_MD_TEXT }, { quoted: session });
                     await delay(100);
