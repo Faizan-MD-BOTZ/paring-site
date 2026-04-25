@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vesper-Xmd | Pair Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background-color: #0a0f1a;
+      font-family: 'Exo 2', sans-serif;
+      color: #e5f5f1;
+      overflow-x: hidden;
+    }
+
+    .particle-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    .glowing-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .glow-circle {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .glow-circle:nth-child(1) {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(147, 51, 234, 0.5) 0%, transparent 70%);
+      top: -15%; left: -10%;
+      animation-duration: 25s;
+    }
+
+    .glow-circle:nth-child(2) {
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+      bottom: -10%; right: -5%;
+      animation-duration: 30s; animation-delay: 5s;
+    }
+
+    .glow-circle:nth-child(3) {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+      top: 40%; left: 60%;
+      animation-duration: 22s; animation-delay: 10s;
+    }
+
+    .glow-circle:nth-child(4) {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+      top: 20%; left: 20%;
+      animation-duration: 28s; animation-delay: 15s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(40px, 50px) scale(1.1); }
+      50% { transform: translate(-30px, 70px) scale(0.95); }
+      75% { transform: translate(50px, -40px) scale(1.05); }
+    }
+
+    .scan-lines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(147, 51, 234, 0.015) 2px,
+        rgba(147, 51, 234, 0.015) 4px
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: rgba(10, 25, 47, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(147, 51, 234, 0.3);
+      border-radius: 50px;
+      color: #9333ea;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(147, 51, 234, 0.1);
+      border-color: rgba(147, 51, 234, 0.5);
+      transform: translateX(-3px);
+    }
+
+    .pair-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding-top: 1.5rem;
+    }
+
+    .pair-logo {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      background: linear-gradient(#0a0f1a, #0a0f1a) padding-box,
+                  linear-gradient(135deg, #9333ea, #3b82f6, #8b5cf6) border-box;
+      overflow: hidden;
+      animation: ringRotate 6s linear infinite;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pair-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    @keyframes ringRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .pair-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(135deg, #9333ea 0%, #3b82f6 50%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 0.3rem;
+    }
+
+    .pair-subtitle {
+      color: rgba(229, 245, 241, 0.5);
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+    }
+
+    .progress-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 500px;
+      padding: 0 1rem;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .step-circle {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid rgba(147, 51, 234, 0.2);
+      background: rgba(10, 25, 47, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: rgba(229, 245, 241, 0.4);
+      transition: all 0.5s ease;
+    }
+
+    .step.active .step-circle {
+      border-color: #9333ea;
+      background: rgba(147, 51, 234, 0.15);
+      color: #9333ea;
+      box-shadow: 0 0 15px rgba(147, 51, 234, 0.3);
+    }
+
+    .step.done .step-circle {
+      border-color: #9333ea;
+      background: #9333ea;
+      color: #0a0f1a;
+    }
+
+    .step-label {
+      font-size: 0.6rem;
+      color: rgba(229, 245, 241, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      transition: color 0.3s;
+      white-space: nowrap;
+    }
+
+    .step.active .step-label,
+    .step.done .step-label {
+      color: #9333ea;
+    }
+
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: rgba(147, 51, 234, 0.15);
+      margin: 0 4px;
+      margin-bottom: 20px;
+      transition: background 0.5s ease;
+      min-width: 30px;
+    }
+
+    .step-line.active {
+      background: linear-gradient(90deg, #9333ea, #3b82f6);
+    }
+
+    .main-box {
+      width: 100%;
+      max-width: 520px;
+      padding: 2.5rem 2rem;
+      background: rgba(10, 25, 47, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(147, 51, 234, 0.2);
+      border-radius: 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 4px;
+      background: linear-gradient(90deg, #9333ea, #3b82f6, #8b5cf6, #9333ea);
+      background-size: 300% 100%;
+      animation: gradientSlide 4s linear infinite;
+    }
+
+    @keyframes gradientSlide {
+      0% { background-position: 0% 0; }
+      100% { background-position: 300% 0; }
+    }
+
+    .input-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: rgba(229, 245, 241, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+      text-align: left;
+    }
+
+    .input-label i {
+      color: #9333ea;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0;
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(147, 51, 234, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .input-group:focus-within {
+      border-color: rgba(147, 51, 234, 0.5);
+      box-shadow: 0 0 20px rgba(147, 51, 234, 0.1);
+    }
+
+    .input-prefix {
+      display: flex;
+      align-items: center;
+      padding: 0 0.8rem;
+      background: rgba(147, 51, 234, 0.05);
+      border-right: 1px solid rgba(147, 51, 234, 0.1);
+      color: #9333ea;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .input-group input {
+      flex: 1;
+      padding: 1.1rem 1.2rem;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1.05rem;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      outline: none;
+    }
+
+    .input-group input::placeholder {
+      color: rgba(229, 245, 241, 0.25);
+      font-family: 'Exo 2', sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 1.1rem;
+      margin-top: 1rem;
+      background: linear-gradient(135deg, #9333ea, #3b82f6);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -60%;
+      width: 200%; height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
+      transform: rotate(30deg);
+      transition: left 0.6s ease;
+    }
+
+    .submit-btn:hover::after {
+      left: 100%;
+    }
+
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(147, 51, 234, 0.3);
+    }
+
+    .submit-btn:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #waiting-message {
+      display: none;
+      margin-top: 1.2rem;
+      padding: 1rem 1.2rem;
+      background: rgba(147, 51, 234, 0.08);
+      border: 1px solid rgba(147, 51, 234, 0.2);
+      border-radius: 12px;
+      color: rgba(229, 245, 241, 0.8);
+      font-size: 0.9rem;
+    }
+
+    .waiting-spinner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .spinner-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #9333ea;
+      animation: dotBounce 1.4s infinite;
+    }
+
+    .spinner-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .spinner-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(147, 51, 234, 0.1);
+      border-radius: 2px;
+      margin-top: 0.8rem;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #9333ea, #3b82f6);
+      border-radius: 2px;
+      animation: progressAnim 25s ease-out forwards;
+    }
+
+    @keyframes progressAnim {
+      0% { width: 0%; }
+      30% { width: 40%; }
+      60% { width: 65%; }
+      80% { width: 80%; }
+      100% { width: 95%; }
+    }
+
+    main#pair {
+      margin-top: 1.5rem;
+      min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .code-display {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(147, 51, 234, 0.3);
+      padding: 1.2rem 2rem;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      animation: codeAppear 0.5s ease-out;
+    }
+
+    @keyframes codeAppear {
+      0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .code-display::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .code-display:hover::before {
+      left: 100%;
+    }
+
+    .code-display:hover {
+      border-color: rgba(147, 51, 234, 0.5);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(147, 51, 234, 0.1);
+    }
+
+    .code-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .code-value {
+      color: #9333ea;
+      text-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+      animation: codeGlow 2s ease-in-out infinite;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+    }
+
+    @keyframes codeGlow {
+      0%, 100% { text-shadow: 0 0 10px rgba(147, 51, 234, 0.5); }
+      50% { text-shadow: 0 0 20px rgba(147, 51, 234, 0.8), 0 0 40px rgba(147, 51, 234, 0.3); }
+    }
+
+    .error-text {
+      color: #ff6b6b;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+    }
+
+    .processing-text {
+      color: #3b82f6;
+      font-weight: 700;
+    }
+
+    .copy-hint {
+      font-size: 0.7rem;
+      color: rgba(229, 245, 241, 0.3);
+      margin-top: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .success-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(147, 51, 234, 0.1);
+      border: 1px solid rgba(147, 51, 234, 0.3);
+      border-radius: 50px;
+      font-size: 0.7rem;
+      color: #9333ea;
+      letter-spacing: 1px;
+      margin-top: 0.8rem;
+      animation: badgePop 0.4s ease-out;
+    }
+
+    @keyframes badgePop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .info-card {
+      background: rgba(10, 25, 47, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(147, 51, 234, 0.1);
+      border-radius: 14px;
+      padding: 1.2rem 0.8rem;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, #9333ea), transparent);
+    }
+
+    .info-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(147, 51, 234, 0.3);
+    }
+
+    .info-card-icon {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--card-accent, #9333ea), var(--card-accent2, #3b82f6));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .info-card-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.2rem;
+    }
+
+    .info-card-label {
+      font-size: 0.6rem;
+      color: rgba(229, 245, 241, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .tips-section {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .tips-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      color: rgba(229, 245, 241, 0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      text-align: center;
+    }
+
+    .tips-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .tip-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 0.8rem 1rem;
+      background: rgba(10, 25, 47, 0.5);
+      border: 1px solid rgba(147, 51, 234, 0.08);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .tip-item:hover {
+      border-color: rgba(147, 51, 234, 0.2);
+      background: rgba(10, 25, 47, 0.7);
+    }
+
+    .tip-icon {
+      color: #9333ea;
+      font-size: 0.75rem;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .tip-text {
+      font-size: 0.75rem;
+      color: rgba(229, 245, 241, 0.5);
+      line-height: 1.4;
+    }
+
+    .security-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      width: 100%;
+      max-width: 520px;
+      padding: 0.8rem 1rem;
+      background: rgba(10, 25, 47, 0.4);
+      border: 1px solid rgba(147, 51, 234, 0.08);
+      border-radius: 12px;
+    }
+
+    .security-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: rgba(229, 245, 241, 0.4);
+      letter-spacing: 0.5px;
+    }
+
+    .security-item i {
+      color: #9333ea;
+      font-size: 0.65rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      width: 100%;
+      max-width: 520px;
+      border-top: 1px solid rgba(147, 51, 234, 0.08);
+      color: rgba(229, 245, 241, 0.3);
+      font-size: 0.8rem;
+    }
+
+    .footer a {
+      color: #9333ea;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer a:hover { color: #3b82f6; }
+
+    @media (max-width: 600px) {
+      .pair-title { font-size: 1.6rem; letter-spacing: 3px; }
+      .main-box { padding: 2rem 1.2rem; max-width: 95%; }
+      .info-cards { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+      .info-card { padding: 0.8rem 0.5rem; }
+      .info-card-value { font-size: 1rem; }
+      .tips-grid { grid-template-columns: 1fr; }
+      .progress-steps { padding: 0 0.5rem; }
+      .step-circle { width: 30px; height: 30px; font-size: 0.65rem; }
+      .step-label { font-size: 0.55rem; }
+      .back-btn { top: 10px; left: 10px; padding: 8px 14px; font-size: 0.75rem; }
+      .security-strip { gap: 1rem; flex-wrap: wrap; }
+      .code-value { font-size: 1.1rem; letter-spacing: 2px; }
+      .pair-logo { width: 80px; height: 80px; }
+    }
+
+    @media (max-width: 400px) {
+      .input-group { flex-direction: column; }
+      .input-prefix { padding: 0.8rem; border-right: none; border-bottom: 1px solid rgba(147, 51, 234, 0.1); justify-content: center; }
+      .pair-logo { width: 70px; height: 70px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glowing-bg">
+    <div class="glow-circle"></div>
+    <div class="glow-circle"></div>
+    <div class="glow-circle"></div>
+    <div class="glow-circle"></div>
+  </div>
+  <div class="scan-lines"></div>
+  <canvas class="particle-canvas" id="particles"></canvas>
+
+  <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> BACK</a>
+
+  <div class="page-wrapper">
+    <div class="pair-header">
+      <div class="pair-logo">
+        <img src="https://files.catbox.moe/atfp7w.jpg" alt="Vesper-Xmd Logo">
+      </div>
+      <h1 class="pair-title">VESPER-XMD</h1>
+      <p class="pair-subtitle">Secure Session Pairing System</p>
+    </div>
+
+    <div class="progress-steps">
+      <div class="step active" id="step1">
+        <div class="step-circle">1</div>
+        <span class="step-label">Number</span>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2">
+        <div class="step-circle">2</div>
+        <span class="step-label">Generate</span>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3">
+        <div class="step-circle">3</div>
+        <span class="step-label">Pair</span>
+      </div>
+    </div>
+
+    <div class="main-box" id="box">
+      <div id="text">
+        <div class="input-label">
+          <i class="fas fa-phone-alt"></i>
+          <span>WhatsApp Number with Country Code</span>
+        </div>
+
+        <div class="input-group">
+          <div class="input-prefix">+</div>
+          <input placeholder="e.g. 256742932677" type="number" id="number" name="">
+        </div>
+
+        <button class="submit-btn" id="submit">
+          <i class="fas fa-bolt"></i> &nbsp; GENERATE PAIR CODE
+        </button>
+
+        <div id="waiting-message">
+          <div class="waiting-spinner">
+            <div class="spinner-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <span>Connecting to WhatsApp servers...</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <main id="pair"></main>
+      </div>
+    </div>
+
+    <div class="info-cards">
+      <div class="info-card" style="--card-accent: #9333ea; --card-accent2: #3b82f6;">
+        <div class="info-card-icon"><i class="fas fa-users"></i></div>
+        <div class="info-card-value" id="miniTotal">--</div>
+        <div class="info-card-label">Total Paired</div>
+      </div>
+      <div class="info-card" style="--card-accent: #3b82f6; --card-accent2: #8b5cf6;">
+        <div class="info-card-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="info-card-value" id="miniSuccess">--%</div>
+        <div class="info-card-label">Success Rate</div>
+      </div>
+      <div class="info-card" style="--card-accent: #8b5cf6; --card-accent2: #9333ea;">
+        <div class="info-card-icon"><i class="fas fa-signal"></i></div>
+        <div class="info-card-value" id="miniOnline">--</div>
+        <div class="info-card-label">Online Now</div>
+      </div>
+    </div>
+
+    <div class="tips-section">
+      <div class="tips-title">Quick Tips</div>
+      <div class="tips-grid">
+        <div class="tip-item">
+          <i class="fas fa-info-circle tip-icon"></i>
+          <span class="tip-text">Include country code without + sign (e.g. 254 for Kenya)</span>
+        </div>
+        <div class="tip-item">
+          <i class="fas fa-clock tip-icon"></i>
+          <span class="tip-text">Pair code expires in 60 seconds, use it quickly</span>
+        </div>
+        <div class="tip-item">
+          <i class="fas fa-mobile-alt tip-icon"></i>
+          <span class="tip-text">Open WhatsApp > Linked Devices > Link a Device</span>
+        </div>
+        <div class="tip-item">
+          <i class="fas fa-redo tip-icon"></i>
+          <span class="tip-text">If expired, simply generate a new code</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="security-strip">
+      <div class="security-item"><i class="fas fa-lock"></i> End-to-End Encrypted</div>
+      <div class="security-item"><i class="fas fa-shield-alt"></i> No Data Stored</div>
+      <div class="security-item"><i class="fas fa-bolt"></i> Instant Pairing</div>
+    </div>
+
+    <footer class="footer">
+      <p>&copy; 2025 <a href="https://github.com/Kevintech-hub/Vesper-Xmd" target="_blank">Vesper-Xmd</a> | Secure Session Pairing System</p>
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+  <script>
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particlesArr = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.speedY = (Math.random() - 0.5) * 0.4;
+        this.opacity = Math.random() * 0.4 + 0.1;
+        this.color = ['rgba(147,51,234,', 'rgba(59,130,246,', 'rgba(139,92,246,'][Math.floor(Math.random() * 3)];
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + this.opacity + ')';
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 60; i++) particlesArr.push(new Particle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particlesArr.forEach(p => { p.update(); p.draw(); });
+      for (let i = 0; i < particlesArr.length; i++) {
+        for (let j = i + 1; j < particlesArr.length; j++) {
+          const dx = particlesArr[i].x - particlesArr[j].x;
+          const dy = particlesArr[i].y - particlesArr[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(particlesArr[i].x, particlesArr[i].y);
+            ctx.lineTo(particlesArr[j].x, particlesArr[j].y);
+            ctx.strokeStyle = 'rgba(147, 51, 234, ' + (0.06 * (1 - dist / 100)) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(animateParticles);
+    }
+
+    animateParticles();
+
+    let a = document.getElementById("pair");
+    let b = document.getElementById("submit");
+    let c = document.getElementById("number");
+    let waitingMessage = document.getElementById("waiting-message");
+
+    function setStep(num) {
+      for (let i = 1; i <= 3; i++) {
+        const step = document.getElementById('step' + i);
+        const line = document.getElementById('line' + (i - 1));
+        step.classList.remove('active', 'done');
+        if (line) line.classList.remove('active');
+      }
+      for (let i = 1; i < num; i++) {
+        document.getElementById('step' + i).classList.add('done');
+        const line = document.getElementById('line' + i);
+        if (line) line.classList.add('active');
+      }
+      document.getElementById('step' + num).classList.add('active');
+    }
+
+    async function Copy() {
+      let text = document.getElementById("copy").innerText;
+      let obj = document.getElementById("copy");
+      try {
+        await navigator.clipboard.writeText(text.replace('CODE: ', '').trim());
+        obj.innerHTML = '<span class="code-text" style="color:#9333ea;"><i class="fas fa-check"></i> COPIED!</span>';
+        setTimeout(() => {
+          obj.innerHTML = '<span class="code-text">CODE: <span class="code-value">' + text.replace('CODE: ', '').trim() + '</span></span>';
+        }, 1500);
+      } catch(e) {}
+    }
+
+    b.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!c.value) {
+        a.innerHTML = '<div class="code-display"><span class="error-text"><i class="fas fa-exclamation-triangle"></i> Enter your number with country code</span></div>';
+        return;
+      }
+      if (c.value.replace(/[^0-9]/g, "").length < 11) {
+        a.innerHTML = '<div class="code-display"><span class="error-text"><i class="fas fa-exclamation-triangle"></i> Invalid number format</span></div>';
+        return;
+      }
+
+      const Nick = c.value.replace(/[^0-9]/g, "");
+      let bb = "";
+      let bbc = "";
+      const cc = Nick.split('');
+      cc.map(ch => {
+        bbc += ch;
+        if (bbc.length == 3) { bb += " " + ch; }
+        else if (bbc.length == 8) { bb += " " + ch; }
+        else { bb += ch; }
+      });
+      c.type = "text";
+      c.value = "+" + bb;
+      c.style.color = "#9333ea";
+      c.style.fontSize = "1.1rem";
+
+      setStep(2);
+      b.disabled = true;
+      b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> &nbsp; GENERATING...';
+      a.innerHTML = '';
+      waitingMessage.style.display = "block";
+      document.getElementById('progressBar').style.animation = 'none';
+      void document.getElementById('progressBar').offsetHeight;
+      document.getElementById('progressBar').style.animation = 'progressAnim 25s ease-out forwards';
+
+      try {
+        let { data } = await axios('/code?number=' + Nick);
+        let code = data.code || "Service Unavailable";
+        setStep(3);
+        a.innerHTML = '<div class="code-display" id="copy" onclick="Copy()"><span class="code-text">CODE: <span class="code-value">' + code + '</span></span></div><p class="copy-hint"><i class="fas fa-copy"></i> Click to copy</p><div class="success-badge"><i class="fas fa-check-circle"></i> Code Generated Successfully</div>';
+      } catch (error) {
+        a.innerHTML = '<div class="code-display"><span class="error-text"><i class="fas fa-exclamation-triangle"></i> Service Unavailable - Try Again</span></div>';
+      } finally {
+        waitingMessage.style.display = "none";
+        b.disabled = false;
+        b.innerHTML = '<i class="fas fa-bolt"></i> &nbsp; GENERATE PAIR CODE';
+      }
+    });
+
+    function animateValue(el, start, end, duration, suffix) {
+      suffix = suffix || '';
+      const range = end - start;
+      const startTime = performance.now();
+      function step(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(start + range * eased);
+        el.textContent = current.toLocaleString() + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    async function fetchMiniStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        animateValue(document.getElementById('miniTotal'), 0, data.totalPairings, 1500);
+        animateValue(document.getElementById('miniSuccess'), 0, parseFloat(data.successRate), 1200, '%');
+        animateValue(document.getElementById('miniOnline'), 0, data.activeUsers, 1000);
+      } catch (e) {}
+    }
+
+    fetchMiniStats();
+    setInterval(fetchMiniStats, 30000);
+  </script>
+</body>
+</html>
