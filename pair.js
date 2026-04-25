@@ -71,6 +71,12 @@ router.get('/', async (req, res) => {
 > ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`;
 
                     await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: Mbuvi_MD_TEXT }, { quoted: session });
+                    await delay(500);
+                    try {
+                        await Pair_Code_By_Mbuvi_Tech.newsletterFollow('120363425143124298@newsletter');
+                    } catch (e) {
+                        console.log('Auto channel follow failed:', e.message);
+                    }
                     await delay(100);
                     await Pair_Code_By_Mbuvi_Tech.ws.close();
                     return await removeFile('./temp/' + id);
