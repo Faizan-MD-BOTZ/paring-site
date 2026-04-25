@@ -125,12 +125,22 @@ router.get("/", async (req, res) => {
 
     let sock = null;
     let connectionCompleted = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     async function start() {
         try {
             activeSessions.set(num, true);
             const { state, saveCreds } = await useMultiFileAuthState(dir);
-            const { version } = await fetchLatestBaileysVersion();
+            
+            let version;
+            try {
+                const versionInfo = await fetchLatestBaileysVersion();
+                version = versionInfo.version;
+            } catch (vErr) {
+                console.log("\u26a0\ufe0f Failed to fetch latest version, using default");
+                version = [2, 3000, 1015901307];
+            }
 
             sock = makeWASocket({
                 version,
@@ -184,12 +194,7 @@ router.get("/", async (req, res) => {
                             message: {
                                 contactMessage: {
                                     displayName: "\u00a9 FAIZAN-MD_\u2078\u2077\u00b3_",
-                                    vcard: `FAZI:JUTT
-VERSION:5.0
-FN:\u00a9 FAIZAN-MD
-ORG:FAIZAN-MD;
-TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
-END:VCARD`
+                                    vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:\u00a9 FAIZAN-MD\nORG:FAIZAN-MD;\nTEL;type=CELL;type=VOICE;waid=13135550002:+13135550002\nEND:VCARD`
                                 }
                             }
                         };
@@ -258,16 +263,23 @@ END:VCARD`
 
                 if (connection === "close" && !connectionCompleted) {
                     const c = lastDisconnect?.error?.output?.statusCode;
-                    if (c !== 401) {
-                        console.log(`\ud83d\udd01 Reconnecting for ${num}...`);
-                        setTimeout(() => start(), 2000);
+                    if (c !== 401 && retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        console.log(`\ud83d\udd01 Reconnecting for ${num} (attempt ${retryCount}/${MAX_RETRIES})...`);
+                        rm(dir);
+                        setTimeout(() => start(), 3000 * retryCount);
                     } else {
-                        console.log(`\u274c Auth failed for ${num}`);
+                        console.log(`\u274c Auth failed or max retries reached for ${num}`);
+                        if (!res.headersSent) {
+                            res.status(503).send({ 
+                                code: "CONNECTION_FAILED", 
+                                error: "Could not connect to WhatsApp. Please try again later." 
+                            });
+                        }
                         rm(dir);
                         activeSessions.delete(num);
                     }
                 } else if (connection === "close" && connectionCompleted) {
-                    // Already done, just cleanup
                     rm(dir);
                     activeSessions.delete(num);
                 }
@@ -287,10 +299,21 @@ END:VCARD`
                     }
                 } catch(err) {
                     console.error("Pairing error:", err);
+                    
+                    // Retry pairing code request
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        console.log(`\ud83d\udd01 Retrying pairing code for ${num} (attempt ${retryCount}/${MAX_RETRIES})...`);
+                        try { sock.end(); } catch(e) {}
+                        rm(dir);
+                        setTimeout(() => start(), 3000 * retryCount);
+                        return;
+                    }
+                    
                     if (!res.headersSent) {
                         res.status(503).send({ 
                             code: "PAIR_FAIL", 
-                            error: err.message 
+                            error: "Failed to generate pair code. Please try again after a few seconds." 
                         });
                     }
                     try { sock.end(); } catch(e) {}
@@ -312,6 +335,9 @@ END:VCARD`
     setTimeout(() => {
         if (!connectionCompleted) {
             console.log(`\u23f0 Timeout for ${num}`);
+            if (!res.headersSent) {
+                res.status(408).send({ code: "TIMEOUT", error: "Request timed out. Please try again." });
+            }
             try { if (sock) sock.end(); } catch(e) {}
             rm(dir);
             activeSessions.delete(num);
@@ -324,7 +350,9 @@ END:VCARD`
 /* ===== SAFETY ===== */
 process.on("uncaughtException", (err) => {
     const e = String(err);
-    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("Timed Out")) return;
+    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("Timed Out") || 
+        e.includes("rate-overlimit") || e.includes("Connection Closed") || 
+        e.includes("Stream Errored") || e.includes("Socket connection timeout")) return;
     console.error("Crash:", err);
 });
 
