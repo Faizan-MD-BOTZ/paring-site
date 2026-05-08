@@ -363,6 +363,32 @@
       transition: opacity 0.4s ease;
     }
 
+    /* Animated shine sweep */
+    .action-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.06) 40%,
+        rgba(251, 191, 36, 0.15) 50%,
+        rgba(255, 255, 255, 0.06) 60%,
+        transparent 100%
+      );
+      animation: shineSweep 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shineSweep {
+      0%   { left: -100%; }
+      40%  { left: 150%; }
+      100% { left: 150%; }
+    }
+
     .action-btn:hover::before { opacity: 1; }
 
     .action-btn:hover {
@@ -422,6 +448,7 @@
       --btn-glow: rgba(251, 191, 36, 0.2);
       --btn-icon: #fbbf24;
     }
+    .action-btn.secondary::after { animation-delay: 1.3s; }
 
     .action-btn.tertiary {
       --btn-color1: rgba(251, 146, 60, 0.15);
@@ -430,6 +457,7 @@
       --btn-glow: rgba(251, 146, 60, 0.2);
       --btn-icon: #fb923c;
     }
+    .action-btn.tertiary::after { animation-delay: 2.6s; }
 
     @keyframes cardPulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.2); }
