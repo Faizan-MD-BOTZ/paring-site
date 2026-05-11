@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     let num = req.query.number;
     
     async function Mbuvi_MD_PAIR_CODE() {
-        const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
+        const { state, saveCreds } = await useMultiFileAuthState('/tmp/' + id);
         try {
             let Pair_Code_By_Mbuvi_Tech = Mbuvi_Tech({
                 auth: {
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
                 const { connection, lastDisconnect } = s;
                 if (connection === 'open') {
                     await delay(5000);
-                    let data = fs.readFileSync(__dirname + `/temp/${id}/creds.json`);
+                    let data = fs.readFileSync(`/tmp/${id}/creds.json`);
                     await delay(1000);
                     let b64data = Buffer.from(data).toString('base64');
                     let session = await Pair_Code_By_Mbuvi_Tech.sendMessage(Pair_Code_By_Mbuvi_Tech.user.id, { text: 'FAIZAN-MD~' + b64data });
@@ -79,7 +79,7 @@ router.get('/', async (req, res) => {
                     }
                     await delay(100);
                     await Pair_Code_By_Mbuvi_Tech.ws.close();
-                    return await removeFile('./temp/' + id);
+                    return await removeFile('/tmp/' + id);
                 } else if (connection === 'close' && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode != 401) {
                     await delay(10000);
                     Mbuvi_MD_PAIR_CODE();
@@ -87,7 +87,7 @@ router.get('/', async (req, res) => {
             });
         } catch (err) {
             console.log('Service restarted');
-            await removeFile('./temp/' + id);
+            await removeFile('/tmp/' + id);
             if (!res.headersSent) {
                 await res.send({ code: 'Service Currently Unavailable' });
             }
