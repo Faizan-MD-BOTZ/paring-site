@@ -6,7 +6,7 @@
   <title>𝐅αɪᴢαɴ-𝐌ᴅ⎯꯭̽ | Pair Code</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -14,8 +14,8 @@
     body {
       min-height: 100vh;
       margin: 0;
-      background-color: #0f0800;
-      font-family: 'Exo 2', sans-serif;
+      background: linear-gradient(160deg, #110800 0%, #0f0800 40%, #130a00 100%);
+      font-family: 'Inter', 'Exo 2', sans-serif;
       color: #fff7ed;
       overflow-x: hidden;
     }
@@ -113,10 +113,10 @@
       align-items: center;
       gap: 8px;
       padding: 10px 20px;
-      background: rgba(15, 8, 2, 0.7);
+      background: rgba(255, 255, 255, 0.06);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(249, 115, 22, 0.3);
-      border-radius: 50px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
       color: #f97316;
       text-decoration: none;
       font-size: 0.85rem;
@@ -262,9 +262,9 @@
       width: 100%;
       max-width: 520px;
       padding: 2.5rem 2rem;
-      background: rgba(15, 8, 2, 0.7);
+      background: rgba(255, 140, 0, 0.04);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(249, 115, 22, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 24px;
       text-align: center;
       position: relative;
@@ -304,13 +304,15 @@
     }
 
     .input-group {
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       display: flex;
       gap: 0;
       width: 100%;
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
-      border: 1px solid rgba(249, 115, 22, 0.2);
-      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.05);
       transition: all 0.3s ease;
     }
 
@@ -345,7 +347,7 @@
 
     .input-group input::placeholder {
       color: rgba(255, 247, 237, 0.25);
-      font-family: 'Exo 2', sans-serif;
+      font-family: 'Inter', 'Exo 2', sans-serif;
       letter-spacing: 0.5px;
     }
 
@@ -353,9 +355,9 @@
       width: 100%;
       padding: 1.1rem;
       margin-top: 1rem;
-      background: linear-gradient(135deg, #f97316, #fb923c);
+      background: linear-gradient(135deg, #c2410c 0%, #f97316 50%, #fb923c 100%);
       border: none;
-      border-radius: 14px;
+      border-radius: 16px;
       color: #fff;
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
@@ -471,10 +473,12 @@
     }
 
     .code-display {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(249, 115, 22, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.09);
       padding: 1.2rem 2rem;
-      border-radius: 14px;
+      border-radius: 20px;
       cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
@@ -574,10 +578,10 @@
     }
 
     .info-card {
-      background: rgba(15, 8, 2, 0.6);
+      background: rgba(255, 255, 255, 0.04);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(249, 115, 22, 0.1);
-      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
       padding: 1.2rem 0.8rem;
       text-align: center;
       transition: all 0.3s ease;
@@ -738,6 +742,16 @@
       .input-group { flex-direction: column; }
       .input-prefix { padding: 0.8rem; border-right: none; border-bottom: 1px solid rgba(249, 115, 22, 0.1); justify-content: center; }
       .pair-logo { width: 70px; height: 70px; }
+    }
+
+    /* Global glass refinements */
+    .main-box, .info-card, .code-display {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .submit-btn:hover:not(:disabled) {
+      box-shadow: 0 12px 40px rgba(249, 115, 22, 0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.15) !important;
     }
   </style>
 </head>
