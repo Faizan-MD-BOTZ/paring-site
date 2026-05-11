@@ -1,0 +1,9 @@
+run = "npm install && node voltah.js"
+entrypoint = "voltah.js"
+
+[nx]
+channel = "stable-24_05"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
