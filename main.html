@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -14,8 +14,8 @@
     body {
       min-height: 100vh;
       margin: 0;
-      background-color: #0f0800;
-      font-family: 'Exo 2', sans-serif;
+      background: linear-gradient(160deg, #110800 0%, #0f0800 40%, #130a00 100%);
+      font-family: 'Inter', 'Exo 2', sans-serif;
       color: #fff7ed;
       overflow-x: hidden;
     }
@@ -243,10 +243,10 @@
     }
 
     .stat-card {
-      background: rgba(15, 8, 2, 0.6);
+      background: rgba(255, 255, 255, 0.04);
       backdrop-filter: blur(15px);
-      border: 1px solid rgba(249, 115, 22, 0.15);
-      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
       padding: 1.5rem 1rem;
       text-align: center;
       transition: all 0.4s ease;
@@ -294,9 +294,9 @@
     }
 
     .main-card {
-      background: rgba(15, 8, 2, 0.7);
+      background: rgba(255, 140, 0, 0.04);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(249, 115, 22, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 24px;
       padding: 2.5rem 2rem;
       width: 100%;
@@ -338,15 +338,17 @@
     }
 
     .action-btn {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1rem;
       padding: 2rem 1.5rem;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(249, 115, 22, 0.2);
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
       cursor: pointer;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       overflow: hidden;
@@ -399,7 +401,7 @@
 
     .btn-icon-wrap {
       width: 60px; height: 60px;
-      border-radius: 50%;
+      border-radius: 16px;
       background: linear-gradient(135deg, var(--btn-color1, rgba(194, 65, 12, 0.2)), var(--btn-color2, rgba(249, 115, 22, 0.2)));
       display: flex;
       align-items: center;
@@ -437,7 +439,7 @@
       --btn-border: rgba(249, 115, 22, 0.5);
       --btn-glow: rgba(249, 115, 22, 0.2);
       --btn-icon: #f97316;
-      border-color: rgba(249, 115, 22, 0.3);
+      border-color: rgba(249, 115, 22, 0.4);
       animation: cardPulse 3s infinite;
     }
 
@@ -481,10 +483,10 @@
       align-items: center;
       gap: 1rem;
       padding: 1.2rem 1.5rem;
-      background: rgba(15, 8, 2, 0.6);
+      background: rgba(255, 255, 255, 0.04);
       backdrop-filter: blur(15px);
-      border: 1px solid var(--deploy-border, rgba(249, 115, 22, 0.15));
-      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
       text-decoration: none;
       color: inherit;
       transition: all 0.4s ease;
@@ -567,10 +569,10 @@
     }
 
     .feature-card {
-      background: rgba(15, 8, 2, 0.5);
+      background: rgba(255, 255, 255, 0.04);
       backdrop-filter: blur(10px);
-      border: 1px solid rgba(249, 115, 22, 0.1);
-      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
       padding: 1.5rem;
       text-align: center;
       transition: all 0.3s ease;
@@ -639,6 +641,18 @@
       .logo-icon { font-size: 3rem; }
       .stats-grid { gap: 0.8rem; }
       .stat-card { padding: 1rem 0.8rem; }
+    }
+
+    /* Global glass refinements */
+    .main-card, .stat-card, .feature-card, .deploy-card, .action-btn {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .action-btn:hover {
+      background: rgba(249, 115, 22, 0.1) !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4),
+                  0 0 40px rgba(249, 115, 22, 0.2),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
     }
   </style>
 </head>
