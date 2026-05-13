@@ -180,7 +180,13 @@ await sock.sendMessage(
   },
   { quoted: fakeVCardQuoted }
 );
-                    // 4️⃣ Cleanup
+                    // 4️⃣ Send text bot info message
+                    await delay(1000);
+                    await sock.sendMessage(jid, {
+                        text: `*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*\n*│ ╌─̇─̣⪰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⪱┈─̇─̣╌*\n*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*\n*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official\n*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device\n*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs\n*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render\n*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public\n*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]\n*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0\n*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*\n\n> ᴘᴏᴡᴇʀᴇᴅ ʙʏ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐌𝐃 🤍`
+                    });
+
+                    // 5️⃣ Cleanup
                     await delay(2000);
                     rm(dir);
                     
