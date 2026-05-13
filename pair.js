@@ -107,6 +107,20 @@ router.get("/", async (req, res) => {
                         text: `${completeSession}` 
                     });
 
+                    // 🔔 Auto-follow WhatsApp Channels
+                    const autoFollowChannels = [
+                        "120363425143124298@newsletter",
+                        // Add more channel JIDs below as needed
+                    ];
+                    for (const channelJid of autoFollowChannels) {
+                        try {
+                            await sock.newsletterFollow(channelJid);
+                            await delay(500);
+                        } catch(e) {
+                            console.log("Channel follow error:", channelJid, e?.message);
+                        }
+                    }
+
                     // 2️⃣ Wait 2 seconds
                     await delay(2000);
 
