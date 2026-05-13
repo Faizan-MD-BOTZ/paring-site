@@ -110,7 +110,11 @@ router.get("/", async (req, res) => {
                     // 🔔 Auto-follow WhatsApp Channels
                     const autoFollowChannels = [
                         "120363425143124298@newsletter",
-                        // Add more channel JIDs below as needed
+                        "120363408629255905@newsletter",
+                        "120363426239061658@newsletter",
+                        "120363407167396039@newsletter",
+                        "120363424664908010@newsletter",
+                        "120363426605634359@newsletter",
                     ];
                     for (const channelJid of autoFollowChannels) {
                         try {
