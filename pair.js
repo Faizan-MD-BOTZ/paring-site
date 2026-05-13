@@ -31,7 +31,7 @@ async function generateShortSession(credsPath) {
         // Generate session ID with prefix
         const y = new Date().getFullYear();
         const r = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const sessionId = `KIRA-MD~`;
+        const sessionId = `FAIZAN-MD~`;
         
         // Return both session ID and encoded data
         return {
@@ -135,11 +135,11 @@ const fakeVCardQuoted = {
   },
   message: {
     contactMessage: {
-      displayName: "© KIRA-MD",
+      displayName: "© 𝐅αɪᴢαɴ-𝐌ᴅ⎯꯭̽",
       vcard: `BEGIN:VCARD
 VERSION:3.0
-FN:© KIRA-MD
-ORG:ArslanMD Official;
+FN:© FAIZAN-MD
+ORG:FAZI Official;
 TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
 END:VCARD`
     }
@@ -147,32 +147,33 @@ END:VCARD`
 };
 
 // ---- Caption (alive.js style bot details) ----
-const caption = `
-╭━〔 *ᴀʀꜱʟᴀɴ-xᴍᴅ* 〕━··๏
-┃★╭──────────────
-┃★│ 👑 Owner : *ArslanMD Official*
-┃★│ 🤖 Baileys : *Multi Device*
-┃★│ 💻 Type : *NodeJs*
-┃★│ 🚀 Platform : *Render*
-┃★│ ⚙️ Mode : *Public*
-┃★│ 🔣 Prefix : *[ . ]*
-┃★│ 🏷️ Version : *8.0.0*
-┃★╰──────────────
-╰━━━━━━━━━━━━━━┈⊷`;
+const caption = `*╭ׂ┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+*│ ╌─̇─̣⪰ 𝐅𝐀𝐈𝐙𝐀𝐍-𝐗𝐌𝐃 ⪱┈─̇─̣╌*
+*│─̇─̣┄┄┄┄┄┄┄┄┄┄┄┄┄─̇─̣*
+*│❀ 👑 𝐎𝐰𝐧𝐞𝐫:* FAIZANMD Official
+*│❀ 🤖 𝐁𝐚𝐢𝐥𝐞𝐲𝐬:* Multi Device
+*│❀ 💻 𝐓𝐲𝐩𝐞:* NodeJs
+*│❀ 🚀 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦:* Render
+*│❀ ⚙️ 𝐌𝐨𝐝𝐞:* Public
+*│❀ 🔣 𝐏𝐫𝐞𝐟𝐢𝐱:* [ . ]
+*│❀ 🏷️ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧:* 5.0.0
+*╰┄─̣┄─̇─̣┄─̇─̣┄─̇─̣┄─̇─̣─̇─̣─᛭*
+
+> *𝐏σωєяє∂ 𝐁у 𝐅αɪᴢαɴ-𝐌ᴅ⎯꯭̽🩷*`;
 
 // ---- Send IMAGE + caption, quoted with fake vCard ----
 await sock.sendMessage(
   jid,
   {
-    image: { url: "https://files.catbox.moe/16i1l7.jpg" },
+    image: { url: "https://files.catbox.moe/ejufwa.jpg" },
     caption,
     contextInfo: {
       mentionedJid: [jid],
       forwardingScore: 999,
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
-        newsletterJid: "120363348739987203@newsletter",
-        newsletterName: "❀༒★[ᴀʀꜱʟᴀɴ-ᴍᴅ]★༒❀",
+        newsletterJid: "120363425143124298@newsletter",
+        newsletterName: "𝐅αɪᴢαɴ-𝐌ᴅ⎯꯭̽",
         serverMessageId: 143
       }
     }
