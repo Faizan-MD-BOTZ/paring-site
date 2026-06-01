@@ -14,7 +14,7 @@
   "author": "Arslan-MD",
   "license": "ISC",
   "dependencies": {
-    "@whiskeysockets/baileys": "v7.0.0-rc.9",
+    "@whiskeysockets/baileys": "lastest",
     "awesome-phonenumber": "7.2.0",
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
